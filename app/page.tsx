@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Star, Truck, Shield, Headphones } from "lucide-react"
+import PhotoGallery from "@/components/ui/PhotoGallery"
+
 
 export default function HomePage() {
   const featuredProducts = [
@@ -67,7 +69,7 @@ export default function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="border-white text-black hover:bg-white hover:text-orange-600 px-8 py-4 text-lg"
+              className="border-white text-white hover:bg-white hover:text-black px-8 py-4 text-lg bg-transparent"
             >
               <Link href="/about">NOSSA HISTÓRIA</Link>
             </Button>
@@ -165,21 +167,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Newsletter Section */}
+      {/* Photo Gallery Section */}
       <section className="py-20 bg-gradient-to-r from-gray-900 to-black">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-black mb-4">
-            FIQUE POR <span className="text-orange-500">DENTRO</span>
-          </h2>
-          <p className="text-gray-400 mb-8 text-lg">Receba em primeira mão os lançamentos e promoções exclusivas</p>
-          <div className="max-w-md mx-auto flex gap-4">
-            <input
-              type="email"
-              placeholder="Seu melhor e-mail"
-              className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500"
-            />
-            <Button className="bg-orange-500 hover:bg-orange-600 text-black font-bold px-6">INSCREVER</Button>
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black mb-4">
+              GALERIA <span className="text-orange-500">DUNK</span>
+            </h2>
+            <p className="text-gray-400 text-lg">Explore o universo Nike Dunk através de imagens exclusivas</p>
           </div>
+          <PhotoGallery />
         </div>
       </section>
     </div>
