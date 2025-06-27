@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, Phone, Mail, Clock, Instagram, MessageCircle, Send } from "lucide-react"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { MapPin, Phone, Mail, Clock, Instagram, MessageCircle, Send, Search } from "lucide-react"
+import { sendContactEmail, ADMIN_EMAIL } from "@/lib/email-service"
+import { faqData, getAllCategories, getFAQByCategory, searchFAQ } from "@/lib/faq-data"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -18,11 +21,24 @@ export default function ContactPage() {
     subject: "",
     message: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [faqSearch, setFaqSearch] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Form submitted:", formData)
+    setIsSubmitting(true)
+
+    try {
+      await sendContactEmail(formData)
+      setSubmitSuccess(true)
+      setFormData({ name: "", email: "", subject: "", message: "" })
+    } catch (error) {
+      alert("Erro ao enviar mensagem. Tente novamente.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const contactInfo = [
@@ -39,7 +55,7 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "E-MAIL",
-      content: "contato@dunkstore.com.br\nvendas@dunkstore.com.br\nsuporte@dunkstore.com.br",
+      content: `${ADMIN_EMAIL}\nsuporte@dunkstore.com.br\nvendas@dunkstore.com.br`,
     },
     {
       icon: Clock,
@@ -63,6 +79,13 @@ export default function ContactPage() {
     },
   ]
 
+  const categories = getAllCategories()
+  const filteredFAQ = faqSearch
+    ? searchFAQ(faqSearch)
+    : selectedCategory === "all"
+      ? faqData
+      : getFAQByCategory(selectedCategory)
+
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-12">
@@ -77,7 +100,7 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
           {/* Contact Form */}
           <div className="lg:col-span-2">
             <Card className="bg-gray-900 border-gray-800">
@@ -88,81 +111,100 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="name" className="text-sm font-bold text-gray-300 mb-2 block">
-                        NOME COMPLETO *
-                      </Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500"
-                        placeholder="Seu nome completo"
-                        required
-                      />
+                {submitSuccess ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Send className="h-8 w-8 text-white" />
                     </div>
-                    <div>
-                      <Label htmlFor="email" className="text-sm font-bold text-gray-300 mb-2 block">
-                        E-MAIL *
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500"
-                        placeholder="seu@email.com"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="subject" className="text-sm font-bold text-gray-300 mb-2 block">
-                      ASSUNTO *
-                    </Label>
-                    <Select
-                      value={formData.subject}
-                      onValueChange={(value) => setFormData({ ...formData, subject: value })}
+                    <h3 className="text-xl font-bold text-green-500 mb-2">Mensagem Enviada!</h3>
+                    <p className="text-gray-400 mb-4">
+                      Recebemos sua mensagem e responderemos em breve no email: {formData.email || "seu email"}
+                    </p>
+                    <Button
+                      onClick={() => setSubmitSuccess(false)}
+                      className="bg-orange-500 hover:bg-orange-600 text-black font-bold"
                     >
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue placeholder="Selecione o assunto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="duvida-produto">Dúvida sobre produto</SelectItem>
-                        <SelectItem value="pedido">Acompanhar pedido</SelectItem>
-                        <SelectItem value="troca-devolucao">Troca/Devolução</SelectItem>
-                        <SelectItem value="sugestao">Sugestão</SelectItem>
-                        <SelectItem value="reclamacao">Reclamação</SelectItem>
-                        <SelectItem value="outros">Outros</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      ENVIAR NOVA MENSAGEM
+                    </Button>
                   </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="name" className="text-sm font-bold text-gray-300 mb-2 block">
+                          NOME COMPLETO *
+                        </Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500"
+                          placeholder="Seu nome completo"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email" className="text-sm font-bold text-gray-300 mb-2 block">
+                          E-MAIL *
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500"
+                          placeholder="seu@email.com"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="message" className="text-sm font-bold text-gray-300 mb-2 block">
-                      MENSAGEM *
-                    </Label>
-                    <Textarea
-                      id="message"
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500 min-h-32"
-                      placeholder="Descreva sua dúvida ou mensagem..."
-                      required
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="subject" className="text-sm font-bold text-gray-300 mb-2 block">
+                        ASSUNTO *
+                      </Label>
+                      <Select
+                        value={formData.subject}
+                        onValueChange={(value) => setFormData({ ...formData, subject: value })}
+                      >
+                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                          <SelectValue placeholder="Selecione o assunto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="duvida-produto">Dúvida sobre produto</SelectItem>
+                          <SelectItem value="pedido">Acompanhar pedido</SelectItem>
+                          <SelectItem value="troca-devolucao">Troca/Devolução</SelectItem>
+                          <SelectItem value="sugestao">Sugestão</SelectItem>
+                          <SelectItem value="reclamacao">Reclamação</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-4"
-                  >
-                    ENVIAR MENSAGEM
-                  </Button>
-                </form>
+                    <div>
+                      <Label htmlFor="message" className="text-sm font-bold text-gray-300 mb-2 block">
+                        MENSAGEM *
+                      </Label>
+                      <Textarea
+                        id="message"
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500 min-h-32"
+                        placeholder="Descreva sua dúvida ou mensagem..."
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-4"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "ENVIANDO..." : "ENVIAR MENSAGEM"}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -207,34 +249,73 @@ export default function ContactPage() {
                 ))}
               </CardContent>
             </Card>
-
-            {/* FAQ Quick Links */}
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">DÚVIDAS FREQUENTES</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <button className="w-full text-left p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
-                    <p className="text-white text-sm font-medium">Como rastrear meu pedido?</p>
-                  </button>
-                  <button className="w-full text-left p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
-                    <p className="text-white text-sm font-medium">Política de trocas e devoluções</p>
-                  </button>
-                  <button className="w-full text-left p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
-                    <p className="text-white text-sm font-medium">Como garantir a autenticidade?</p>
-                  </button>
-                  <button className="w-full text-left p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
-                    <p className="text-white text-sm font-medium">Formas de pagamento aceitas</p>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
 
+        {/* FAQ Section */}
+        <div className="mb-16">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black mb-4">
+              DÚVIDAS <span className="text-orange-500">FREQUENTES</span>
+            </h2>
+            <p className="text-gray-400 text-lg">Encontre respostas rápidas para as perguntas mais comuns</p>
+          </div>
+
+          {/* FAQ Search and Filter */}
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="search"
+                placeholder="Buscar nas perguntas frequentes..."
+                value={faqSearch}
+                onChange={(e) => setFaqSearch(e.target.value)}
+                className="pl-10 bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-orange-500"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full md:w-64 bg-gray-900 border-gray-700 text-white">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* FAQ Accordion */}
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-6">
+              {filteredFAQ.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">Nenhuma pergunta encontrada para sua busca.</p>
+                </div>
+              ) : (
+                <Accordion type="single" collapsible className="w-full">
+                  {filteredFAQ.map((faq) => (
+                    <AccordionItem key={faq.id} value={`item-${faq.id}`} className="border-gray-800">
+                      <AccordionTrigger className="text-left hover:text-orange-500 transition-colors">
+                        <div>
+                          <h3 className="font-semibold">{faq.question}</h3>
+                          <p className="text-xs text-gray-500 mt-1">{faq.category}</p>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-gray-300 leading-relaxed">{faq.answer}</AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Emergency Contact */}
-        <div className="mt-16 text-center">
+        <div className="text-center">
           <Card className="bg-gradient-to-r from-orange-500 to-red-600 border-none">
             <CardContent className="p-8">
               <h3 className="text-2xl font-black text-black mb-4">PRECISA DE AJUDA URGENTE?</h3>

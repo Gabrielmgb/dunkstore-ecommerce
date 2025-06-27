@@ -1,41 +1,26 @@
+"use client"
+
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Star, Truck, Shield, Headphones } from "lucide-react"
-import PhotoGallery from "@/components/ui/PhotoGallery"
-
+import { products } from "@/lib/products-data"
+import type { Product } from "@/lib/cart-context"
+import ProductModal from "@/components/product/product-modal"
 
 export default function HomePage() {
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Nike Dunk Low Retro",
-      price: 899.99,
-      originalPrice: 1199.99,
-      image: "/nike-dunk-grey.jpg?height=300&width=300",
-      badge: "LANÇAMENTO",
-      rating: 4.8,
-    },
-    {
-      id: 2,
-      name: "Nike Dunk High Vintage",
-      price: 749.99,
-      originalPrice: 999.99,
-      image: "/nike-dunk-panda.jpg?height=300&width=300",
-      badge: "PROMOÇÃO",
-      rating: 4.9,
-    },
-    {
-      id: 3,
-      name: "Nike Dunk SB Street",
-      price: 1099.99,
-      image: "/nike-dunk-brown.jpg?height=300&width=300",
-      badge: "EXCLUSIVO",
-      rating: 4.7,
-    },
-  ]
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const featuredProducts = products.slice(0, 3)
+
+  const handleViewProduct = (product: Product) => {
+    setSelectedProduct(product)
+    setIsModalOpen(true)
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -43,7 +28,7 @@ export default function HomePage() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent z-10" />
         <Image
-          src="/hero-dunk.jpg?height=1080&width=1920"
+          src="/placeholder.svg?height=1080&width=1920"
           alt="Nike Dunk Hero"
           fill
           className="object-cover"
@@ -114,7 +99,8 @@ export default function HomePage() {
             {featuredProducts.map((product) => (
               <Card
                 key={product.id}
-                className="bg-gray-900 border-gray-800 overflow-hidden group hover:border-orange-500 transition-all duration-300"
+                className="bg-gray-900 border-gray-800 overflow-hidden group hover:border-orange-500 transition-all duration-300 cursor-pointer"
+                onClick={() => handleViewProduct(product)}
               >
                 <div className="relative">
                   <Image
@@ -146,8 +132,14 @@ export default function HomePage() {
                       )}
                     </div>
                   </div>
-                  <Button asChild className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold">
-                    <Link href={`/product/${product.id}`}>VER DETALHES</Link>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleViewProduct(product)
+                    }}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold"
+                  >
+                    VER DETALHES
                   </Button>
                 </CardContent>
               </Card>
@@ -159,7 +151,7 @@ export default function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black"
+              className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black bg-transparent"
             >
               <Link href="/shop">VER TODOS OS PRODUTOS</Link>
             </Button>
@@ -167,18 +159,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Photo Gallery Section */}
+      {/* Newsletter Section */}
       <section className="py-20 bg-gradient-to-r from-gray-900 to-black">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black mb-4">
-              GALERIA <span className="text-orange-500">DUNK</span>
-            </h2>
-            <p className="text-gray-400 text-lg">Explore o universo Nike Dunk através de imagens exclusivas</p>
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl font-black mb-4">
+            FIQUE POR <span className="text-orange-500">DENTRO</span>
+          </h2>
+          <p className="text-gray-400 mb-8 text-lg">Receba em primeira mão os lançamentos e promoções exclusivas</p>
+          <div className="max-w-md mx-auto flex gap-4">
+            <input
+              type="email"
+              placeholder="Seu melhor e-mail"
+              className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500"
+            />
+            <Button className="bg-orange-500 hover:bg-orange-600 text-black font-bold px-6">INSCREVER</Button>
           </div>
-          <PhotoGallery />
         </div>
       </section>
+
+      {/* Product Modal */}
+      <ProductModal product={selectedProduct} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }

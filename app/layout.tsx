@@ -4,6 +4,11 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import Header from "@/components/layout/header"
 import Footer from "@/components/layout/footer"
+import { CartProvider } from "@/lib/cart-context"
+import { SearchProvider } from "@/lib/search-context"
+import { FavoritesProvider } from "@/lib/favorites-context"
+import { AuthProvider } from "@/lib/auth-context"
+import { Suspense } from "react"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,9 +57,19 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable}>
       <body className={`${inter.className} antialiased`}>
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        <AuthProvider>
+          <SearchProvider>
+            <FavoritesProvider>
+              <CartProvider>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <Header />
+                  <main>{children}</main>
+                  <Footer />
+                </Suspense>
+              </CartProvider>
+            </FavoritesProvider>
+          </SearchProvider>
+        </AuthProvider>
       </body>
     </html>
   )

@@ -1,88 +1,93 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { Star, Filter, Grid, List } from "lucide-react"
+import { Filter, Grid, List } from "lucide-react"
+import { products } from "@/lib/products-data"
+import type { Product } from "@/lib/cart-context"
+import ProductCard from "@/components/product/product-card"
+import ProductModal from "@/components/product/product-modal"
 
 export default function ShopPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [priceRange, setPriceRange] = useState([0, 2000])
+  const [selectedGender, setSelectedGender] = useState<string[]>([])
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState("relevance")
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const products = [
-    {
-      id: 1,
-      name: "Nike Dunk Low Retro White/Black",
-      price: 899.99,
-      originalPrice: 1199.99,
-      image: "/placeholder.svg?height=300&width=300",
-      badge: "PROMOÇÃO",
-      rating: 4.8,
-      sizes: ["38", "39", "40", "41", "42", "43"],
-      colors: ["Branco/Preto", "Preto/Branco"],
-      gender: "Unissex",
-    },
-    {
-      id: 2,
-      name: "Nike Dunk High Vintage Navy",
-      price: 749.99,
-      image: "/placeholder.svg?height=300&width=300",
-      badge: "LANÇAMENTO",
-      rating: 4.9,
-      sizes: ["38", "39", "40", "41", "42"],
-      colors: ["Azul Marinho"],
-      gender: "Masculino",
-    },
-    {
-      id: 3,
-      name: "Nike Dunk SB Street Pink",
-      price: 1099.99,
-      image: "/placeholder.svg?height=300&width=300",
-      badge: "EXCLUSIVO",
-      rating: 4.7,
-      sizes: ["35", "36", "37", "38", "39"],
-      colors: ["Rosa/Branco"],
-      gender: "Feminino",
-    },
-    {
-      id: 4,
-      name: "Nike Dunk Low Championship Red",
-      price: 999.99,
-      image: "/placeholder.svg?height=300&width=300",
-      rating: 4.6,
-      sizes: ["39", "40", "41", "42", "43", "44"],
-      colors: ["Vermelho/Branco"],
-      gender: "Masculino",
-    },
-    {
-      id: 5,
-      name: "Nike Dunk High Pro SB",
-      price: 1299.99,
-      image: "/placeholder.svg?height=300&width=300",
-      badge: "LIMITADO",
-      rating: 4.9,
-      sizes: ["38", "39", "40", "41", "42"],
-      colors: ["Preto/Dourado"],
-      gender: "Unissex",
-    },
-    {
-      id: 6,
-      name: "Nike Dunk Low Coast",
-      price: 849.99,
-      image: "/placeholder.svg?height=300&width=300",
-      rating: 4.5,
-      sizes: ["35", "36", "37", "38", "39", "40"],
-      colors: ["Azul/Branco"],
-      gender: "Feminino",
-    },
-  ]
+  // Filter products based on selected filters
+  const filteredProducts = products.filter((product) => {
+    // Price filter
+    if (product.price < priceRange[0] || product.price > priceRange[1]) return false
+
+    // Gender filter
+    if (selectedGender.length > 0 && !selectedGender.includes(product.gender.toLowerCase())) return false
+
+    // Size filter
+    if (selectedSizes.length > 0 && !selectedSizes.some((size) => product.sizes.includes(size))) return false
+
+    // Color filter (simplified - checks if any selected color is mentioned in product colors)
+    if (selectedColors.length > 0) {
+      const hasMatchingColor = selectedColors.some((color) =>
+        product.colors.some((productColor) => productColor.toLowerCase().includes(color.toLowerCase())),
+      )
+      if (!hasMatchingColor) return false
+    }
+
+    return true
+  })
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case "price-low":
+        return a.price - b.price
+      case "price-high":
+        return b.price - a.price
+      case "newest":
+        return b.id - a.id // Assuming higher ID means newer
+      case "rating":
+        return b.rating - a.rating
+      default:
+        return 0
+    }
+  })
+
+  const handleGenderChange = (gender: string, checked: boolean) => {
+    if (checked) {
+      setSelectedGender([...selectedGender, gender])
+    } else {
+      setSelectedGender(selectedGender.filter((g) => g !== gender))
+    }
+  }
+
+  const handleSizeChange = (size: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSizes([...selectedSizes, size])
+    } else {
+      setSelectedSizes(selectedSizes.filter((s) => s !== size))
+    }
+  }
+
+  const handleColorChange = (color: string, checked: boolean) => {
+    if (checked) {
+      setSelectedColors([...selectedColors, color])
+    } else {
+      setSelectedColors(selectedColors.filter((c) => c !== color))
+    }
+  }
+
+  const handleViewProduct = (product: Product) => {
+    setSelectedProduct(product)
+    setIsModalOpen(true)
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -117,25 +122,19 @@ export default function ShopPage() {
               {/* Gender Filter */}
               <div className="mb-6">
                 <Label className="text-sm font-bold text-gray-300 mb-3 block">GÊNERO</Label>
-                <div className="space-y-2 p-3 text-black bg-white rounded-xl">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="masculino" />
-                    <Label htmlFor="masculino" className="text-sm">
-                      Masculino
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="feminino" />
-                    <Label htmlFor="feminino" className="text-sm">
-                      Feminino
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="unissex" />
-                    <Label htmlFor="unissex" className="text-sm">
-                      Unissex
-                    </Label>
-                  </div>
+                <div className="space-y-2">
+                  {["masculino", "feminino", "unissex"].map((gender) => (
+                    <div key={gender} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={gender}
+                        checked={selectedGender.includes(gender)}
+                        onCheckedChange={(checked) => handleGenderChange(gender, checked as boolean)}
+                      />
+                      <Label htmlFor={gender} className="text-sm capitalize">
+                        {gender}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -146,9 +145,14 @@ export default function ShopPage() {
                   {["35", "36", "37", "38", "39", "40", "41", "42", "43", "44"].map((size) => (
                     <Button
                       key={size}
-                      variant="outline"
+                      variant={selectedSizes.includes(size) ? "default" : "outline"}
                       size="sm"
-                      className="border-gray-700 text-gray-800 hover:border-orange-500 hover:text-orange-500"
+                      onClick={() => handleSizeChange(size, !selectedSizes.includes(size))}
+                      className={
+                        selectedSizes.includes(size)
+                          ? "bg-orange-500 text-black"
+                          : "border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500"
+                      }
                     >
                       {size}
                     </Button>
@@ -159,33 +163,35 @@ export default function ShopPage() {
               {/* Color Filter */}
               <div className="mb-6">
                 <Label className="text-sm font-bold text-gray-300 mb-3 block">COR</Label>
-                <div className="space-y-2 text-black bg-white rounded-xl p-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="preto" />
-                    <Label htmlFor="preto" className="text-sm">
-                      Preto
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="branco" />
-                    <Label htmlFor="branco" className="text-sm">
-                      Branco
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="vermelho" />
-                    <Label htmlFor="vermelho" className="text-sm">
-                      Vermelho
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="azul" />
-                    <Label htmlFor="azul" className="text-sm">
-                      Azul
-                    </Label>
-                  </div>
+                <div className="space-y-2">
+                  {["preto", "branco", "vermelho", "azul", "rosa"].map((color) => (
+                    <div key={color} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={color}
+                        checked={selectedColors.includes(color)}
+                        onCheckedChange={(checked) => handleColorChange(color, checked as boolean)}
+                      />
+                      <Label htmlFor={color} className="text-sm capitalize">
+                        {color}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {/* Clear Filters */}
+              <Button
+                variant="outline"
+                className="w-full border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
+                onClick={() => {
+                  setPriceRange([0, 2000])
+                  setSelectedGender([])
+                  setSelectedSizes([])
+                  setSelectedColors([])
+                }}
+              >
+                LIMPAR FILTROS
+              </Button>
             </div>
           </div>
 
@@ -193,10 +199,10 @@ export default function ShopPage() {
           <div className="lg:w-3/4">
             {/* Sort and View Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-              <p className="text-gray-400">{products.length} produtos encontrados</p>
+              <p className="text-gray-400">{sortedProducts.length} produtos encontrados</p>
 
               <div className="flex items-center gap-4">
-                <Select defaultValue="relevance">
+                <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48 bg-gray-900 border-gray-700">
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
@@ -231,58 +237,26 @@ export default function ShopPage() {
             </div>
 
             {/* Products */}
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}>
-              {products.map((product) => (
-                <Card
-                  key={product.id}
-                  className="bg-gray-900 border-gray-800 overflow-hidden group hover:border-orange-500 transition-all duration-300"
-                >
-                  <div className="relative">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      width={300}
-                      height={300}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {product.badge && (
-                      <Badge className="absolute top-4 left-4 bg-orange-500 text-black font-bold">
-                        {product.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-2">
-                      <div className="flex items-center">
-                        <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
-                        <span className="ml-1 text-sm text-gray-400">{product.rating}</span>
-                      </div>
-                      <span className="ml-auto text-xs text-gray-500">{product.gender}</span>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2 text-white">{product.name}</h3>
-                    <p className="text-sm text-gray-400 mb-3">Tamanhos: {product.sizes.join(", ")}</p>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <span className="text-xl font-bold text-orange-500">
-                          R$ {product.price.toFixed(2).replace(".", ",")}
-                        </span>
-                        {product.originalPrice && (
-                          <span className="ml-2 text-sm text-gray-500 line-through">
-                            R$ {product.originalPrice.toFixed(2).replace(".", ",")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button asChild className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold">
-                      <Link href={`/product/${product.id}`}>VER PRODUTO</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {sortedProducts.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-gray-400 text-lg mb-4">Nenhum produto encontrado</p>
+                <p className="text-gray-500">Tente ajustar os filtros para ver mais produtos</p>
+              </div>
+            ) : (
+              <div
+                className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}
+              >
+                {sortedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} onViewDetails={handleViewProduct} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Product Modal */}
+      <ProductModal product={selectedProduct} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }

@@ -5,9 +5,9 @@ import { Target, Users, Award, Truck } from "lucide-react"
 
 export default function AboutPage() {
   const stats = [
-    { number: "28K+", label: "Clientes Satisfeitos" },
-    { number: "50+", label: "Modelos Disponíveis" },
-    { number: "100%", label: "Produtos Originais" },
+    { number: "50K+", label: "Clientes Satisfeitos" },
+    { number: "500+", label: "Modelos Disponíveis" },
+    { number: "99%", label: "Produtos Originais" },
     { number: "24h", label: "Suporte Ativo" },
   ]
 
@@ -39,7 +39,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent z-10" />
-        <Image src="/banner-dunk.jpg?height=800&width=1920" alt="About Hero" fill className="object-cover" />
+        <Image src="/placeholder.svg?height=800&width=1920" alt="About Hero" fill className="object-cover" />
         <div className="relative z-20 container mx-auto px-4">
           <div className="max-w-3xl">
             <Badge className="bg-orange-500 text-black font-bold mb-6">NOSSA HISTÓRIA</Badge>
@@ -94,7 +94,7 @@ export default function AboutPage() {
             </div>
             <div className="relative">
               <Image
-                src="/about-dunk.jpeg?height=600&width=600"
+                src="/placeholder.svg?height=600&width=600"
                 alt="Nossa História"
                 width={600}
                 height={600}

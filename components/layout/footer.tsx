@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Instagram, MessageCircle, Mail, MapPin, Phone } from "lucide-react"
+import { ADMIN_EMAIL } from "@/lib/email-service"
 
 export default function Footer() {
   const footerLinks = {
@@ -13,24 +14,24 @@ export default function Footer() {
       { name: "Promoções", href: "/shop?filter=promocoes" },
     ],
     support: [
-      { name: "Central de Ajuda", href: "/help" },
-      { name: "Rastrear Pedido", href: "/track" },
-      { name: "Trocas e Devoluções", href: "/returns" },
-      { name: "Guia de Tamanhos", href: "/size-guide" },
+      { name: "Central de Ajuda", href: "/contact" },
+      { name: "Rastrear Pedido", href: "/account?tab=orders" },
+      { name: "Trocas e Devoluções", href: "/contact" },
+      { name: "Guia de Tamanhos", href: "/contact" },
       { name: "Fale Conosco", href: "/contact" },
     ],
     company: [
       { name: "Sobre Nós", href: "/about" },
       { name: "Nossa História", href: "/about#historia" },
-      { name: "Trabalhe Conosco", href: "/careers" },
-      { name: "Imprensa", href: "/press" },
-      { name: "Blog", href: "/blog" },
+      { name: "Trabalhe Conosco", href: "/contact" },
+      { name: "Imprensa", href: "/contact" },
+      { name: "Blog", href: "/contact" },
     ],
     legal: [
-      { name: "Política de Privacidade", href: "/privacy" },
-      { name: "Termos de Uso", href: "/terms" },
-      { name: "Política de Cookies", href: "/cookies" },
-      { name: "Autenticidade", href: "/authenticity" },
+      { name: "Política de Privacidade", href: "/contact" },
+      { name: "Termos de Uso", href: "/contact" },
+      { name: "Política de Cookies", href: "/contact" },
+      { name: "Autenticidade", href: "/about" },
     ],
   }
 
@@ -145,7 +146,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                <p className="text-sm text-gray-400">contato@dunkstore.com.br</p>
+                <p className="text-sm text-gray-400">{ADMIN_EMAIL}</p>
               </div>
             </div>
           </div>

@@ -1,46 +1,80 @@
 "use client"
 
-import React, { useState } from "react"
+import { useEffect, useState } from "react"
+import { notFound } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus } from "lucide-react"
+import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ShoppingCart } from "lucide-react"
+import { getProductById } from "@/lib/products-data"
+import { useCart, type Product } from "@/lib/cart-context"
+import { useFavorites } from "@/lib/favorites-context"
+import { getReviewsByProductId, getReviewsCount } from "@/lib/reviews-data"
+import ShareModal from "@/components/share/share-modal"
 
-export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params)
-
+export default function ProductPage({ params }: { params: { id: string } }) {
+  const { dispatch } = useCart()
+  const [product, setProduct] = useState<Product | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedSize, setSelectedSize] = useState("")
+  const [selectedColor, setSelectedColor] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
-  const product = {
-    id,
-    name: "Nike Dunk Low Retro White/Black",
-    price: 899.99,
-    originalPrice: 1199.99,
-    rating: 4.8,
-    reviews: 127,
-    badge: "PROMOÇÃO",
-    images: [
-      "/nike-dunk-panda.jpg?height=600&width=600",
-      "/nike-dunk-panda-2.jpg?height=600&width=600",
-      "/nike-dunk-panda-3.jpg?height=600&width=600",
-      "/nike-dunk-panda-4.webp?height=600&width=600",
-    ],
-    sizes: ["38", "39", "40", "41", "42", "43"],
-    description:
-      "O Nike Dunk Low Retro traz de volta o ícone do basquete dos anos 80 com detalhes premium e conforto moderno. Com cabedal em couro genuíno e solado de borracha durável, este tênis combina estilo clássico com performance contemporânea.",
-    features: [
-      "Cabedal em couro genuíno premium",
-      "Solado de borracha com tração multidirecional",
-      "Espuma no colarinho para conforto extra",
-      "Design icônico dos anos 80",
-      "Palmilha acolchoada removível",
-    ],
-    inStock: true,
-    stockCount: 15,
+  const { isFavorite, toggleFavorite } = useFavorites()
+
+  useEffect(() => {
+    const productId = Number.parseInt(params.id)
+    const foundProduct = getProductById(productId)
+
+    if (!foundProduct) {
+      notFound()
+    }
+
+    setProduct(foundProduct)
+    setIsLoading(false)
+  }, [params.id])
+
+  const productReviews = product ? getReviewsByProductId(product.id) : []
+  const reviewsCount = product ? getReviewsCount(product.id) : 0
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando produto...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return notFound()
+  }
+
+  const images = [product.image, product.image, product.image, product.image]
+
+  const addToCart = () => {
+    if (!selectedSize || !selectedColor) {
+      alert("Por favor, selecione o tamanho e a cor")
+      return
+    }
+
+    dispatch({
+      type: "ADD_TO_CART",
+      payload: {
+        product,
+        size: selectedSize,
+        color: selectedColor,
+        quantity,
+      },
+    })
+
+    alert("Produto adicionado ao carrinho!")
   }
 
   const reviews = [
@@ -75,7 +109,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <div className="space-y-4">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-900">
               <Image
-                src={product.images[selectedImage] || "/placeholder.svg"}
+                src={images[selectedImage] || "/placeholder.svg"}
                 alt={product.name}
                 fill
                 className="object-cover"
@@ -85,7 +119,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               )}
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {product.images.map((image, index) => (
+              {images.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -151,10 +185,31 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     className={
                       selectedSize === size
                         ? "bg-orange-500 text-black font-bold"
-                        : "border-gray-700 text-gray-800 hover:border-orange-500 hover:text-orange-500"
+                        : "border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500"
                     }
                   >
                     {size}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Selection */}
+            <div>
+              <h3 className="text-lg font-bold mb-3">COR</h3>
+              <div className="space-y-2">
+                {product.colors.map((color) => (
+                  <Button
+                    key={color}
+                    variant={selectedColor === color ? "default" : "outline"}
+                    onClick={() => setSelectedColor(color)}
+                    className={
+                      selectedColor === color
+                        ? "bg-orange-500 text-black font-bold w-full"
+                        : "border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 w-full"
+                    }
+                  >
+                    {color}
                   </Button>
                 ))}
               </div>
@@ -169,7 +224,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     variant="ghost"
                     size="sm"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="text-gray-400 hover:text-black"
+                    className="text-gray-400 hover:text-white"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -178,7 +233,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     variant="ghost"
                     size="sm"
                     onClick={() => setQuantity(quantity + 1)}
-                    className="text-gray-400 hover:text-black"
+                    className="text-gray-400 hover:text-white"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -190,25 +245,33 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {/* Action Buttons */}
             <div className="space-y-4">
               <Button
+                onClick={addToCart}
                 size="lg"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-4 text-lg"
-                disabled={!selectedSize}
+                disabled={!selectedSize || !selectedColor}
               >
+                <ShoppingCart className="h-5 w-5 mr-2" />
                 ADICIONAR AO CARRINHO
               </Button>
               <div className="flex gap-4">
                 <Button
+                  onClick={() => toggleFavorite(product)}
                   variant="outline"
                   size="lg"
-                  className="flex-1 border-gray-700 text-gray-800 hover:border-orange-500 hover:text-orange-500"
+                  className={`flex-1 border-gray-700 hover:bg-gray-800 bg-transparent ${
+                    isFavorite(product.id)
+                      ? "text-orange-500 border-orange-500"
+                      : "text-gray-300 hover:border-orange-500 hover:text-orange-500"
+                  }`}
                 >
-                  <Heart className="h-5 w-5 mr-2" />
-                  FAVORITAR
+                  <Heart className={`h-5 w-5 mr-2 ${isFavorite(product.id) ? "fill-current" : ""}`} />
+                  {isFavorite(product.id) ? "FAVORITADO" : "FAVORITAR"}
                 </Button>
                 <Button
+                  onClick={() => setIsShareModalOpen(true)}
                   variant="outline"
                   size="lg"
-                  className="flex-1 border-gray-700 text-gray-800 hover:border-orange-500 hover:text-orange-500"
+                  className="flex-1 border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
                 >
                   <Share2 className="h-5 w-5 mr-2" />
                   COMPARTILHAR
@@ -260,7 +323,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 CARACTERÍSTICAS
               </TabsTrigger>
               <TabsTrigger value="reviews" className="data-[state=active]:bg-orange-500 data-[state=active]:text-black">
-                AVALIAÇÕES ({product.reviews})
+                AVALIAÇÕES ({reviewsCount})
               </TabsTrigger>
             </TabsList>
 
@@ -288,35 +351,114 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-              <div className="space-y-4">
-                {reviews.map((review) => (
-                  <Card key={review.id} className="bg-gray-900 border-gray-800">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-bold">{review.name}</h4>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? "fill-orange-500 text-orange-500" : "text-gray-600"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-400">{review.date}</span>
+              <div className="space-y-6">
+                {/* Reviews Summary */}
+                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold">Avaliações dos Clientes</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < Math.floor(product.rating) ? "fill-orange-500 text-orange-500" : "text-gray-600"
+                            }`}
+                          />
+                        ))}
                       </div>
-                      <p className="text-gray-300">{review.comment}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <span className="text-lg font-bold">{product.rating}</span>
+                      <span className="text-gray-400">({reviewsCount} avaliações)</span>
+                    </div>
+                  </div>
+
+                  {/* Rating Distribution */}
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map((rating) => {
+                      const count = productReviews.filter((r) => r.rating === rating).length
+                      const percentage = reviewsCount > 0 ? (count / reviewsCount) * 100 : 0
+
+                      return (
+                        <div key={rating} className="flex items-center gap-3">
+                          <span className="text-sm w-8">{rating}★</span>
+                          <div className="flex-1 bg-gray-800 rounded-full h-2">
+                            <div
+                              className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-gray-400 w-8">{count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Individual Reviews */}
+                <div className="space-y-4">
+                  {productReviews.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-900 border border-gray-800 rounded-lg">
+                      <Star className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 mb-2">Ainda não há avaliações para este produto</p>
+                      <p className="text-sm text-gray-500">Seja o primeiro a avaliar!</p>
+                    </div>
+                  ) : (
+                    productReviews.map((review) => (
+                      <Card key={review.id} className="bg-gray-900 border-gray-800">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">
+                                {review.userName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-bold">{review.userName}</h4>
+                                  {review.verified && (
+                                    <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">
+                                      Compra Verificada
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center mt-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${
+                                        i < review.rating ? "fill-orange-500 text-orange-500" : "text-gray-600"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <span className="text-sm text-gray-400">{review.date}</span>
+                          </div>
+                          <p className="text-gray-300 leading-relaxed">{review.comment}</p>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+
+                {/* Load More Reviews Button */}
+                {productReviews.length > 5 && (
+                  <div className="text-center">
+                    <Button
+                      variant="outline"
+                      className="border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
+                    >
+                      VER MAIS AVALIAÇÕES
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
         </div>
       </div>
+      {/* Share Modal */}
+      <ShareModal product={product} isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
     </div>
   )
 }
