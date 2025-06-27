@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,8 @@ import { useCart, type Product } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
 import ShareModal from "@/components/share/share-modal"
 import type { Review } from "@/lib/reviews-data"
+import { useToast } from "@/components/ui/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 
 interface ProductViewProps {
   product: Product
@@ -19,21 +21,38 @@ interface ProductViewProps {
 
 export default function ProductView({ product, initialReviews }: ProductViewProps) {
   const { dispatch } = useCart()
-  const [selectedSize, setSelectedSize] = useState("")
-  const [selectedColor, setSelectedColor] = useState("")
+  const { toast } = useToast()
+  const [selectedSize, setSelectedSize] = useState(product.sizes.length > 0 ? product.sizes[0] : "")
+  const [selectedColor, setSelectedColor] = useState(product.colors.length > 0 ? product.colors[0] : "")
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   const { isFavorite, toggleFavorite } = useFavorites()
 
-  const reviewsCount = initialReviews.length
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
+  const reviewsCount = initialReviews.length
   const images = [product.image, product.image, product.image, product.image]
 
   const addToCart = () => {
-    if (!selectedSize || !selectedColor) {
-      alert("Por favor, selecione o tamanho e a cor")
+    if (!selectedSize) {
+      toast({
+        title: "Atenção",
+        description: "Por favor, selecione um tamanho.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (!selectedColor) {
+      toast({
+        title: "Atenção",
+        description: "Por favor, selecione uma cor.",
+        variant: "destructive",
+      })
       return
     }
 
@@ -47,35 +66,16 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
       },
     })
 
-    alert("Produto adicionado ao carrinho!")
+    toast({
+      title: "Sucesso!",
+      description: `${product.name} foi adicionado ao carrinho.`,
+      className: "bg-green-600 text-white border-green-700",
+    })
   }
-
-  const reviews = [
-    {
-      id: 1,
-      name: "Carlos Silva",
-      rating: 5,
-      comment: "Tênis incrível! Qualidade excepcional e muito confortável. Recomendo!",
-      date: "15/12/2024",
-    },
-    {
-      id: 2,
-      name: "Ana Santos",
-      rating: 4,
-      comment: "Muito bonito e bem feito. Chegou rapidinho e exatamente como nas fotos.",
-      date: "10/12/2024",
-    },
-    {
-      id: 3,
-      name: "Pedro Costa",
-      rating: 5,
-      comment: "Melhor compra que fiz! Qualidade Nike original, super recomendo a loja.",
-      date: "08/12/2024",
-    },
-  ]
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <Toaster />
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
@@ -149,7 +149,7 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
             {/* Size Selection */}
             <div>
               <h3 className="text-lg font-bold mb-3">TAMANHO</h3>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {product.sizes.map((size) => (
                   <Button
                     key={size}
@@ -170,7 +170,7 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
             {/* Color Selection */}
             <div>
               <h3 className="text-lg font-bold mb-3">COR</h3>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {product.colors.map((color) => (
                   <Button
                     key={color}
@@ -178,8 +178,8 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
                     onClick={() => setSelectedColor(color)}
                     className={
                       selectedColor === color
-                        ? "bg-orange-500 text-black font-bold w-full"
-                        : "border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 w-full"
+                        ? "bg-orange-500 text-black font-bold"
+                        : "border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500"
                     }
                   >
                     {color}
@@ -189,7 +189,7 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
             </div>
 
             {/* Quantity */}
-            <div>
+            <div className="pt-2">
               <h3 className="text-lg font-bold mb-3">QUANTIDADE</h3>
               <div className="flex items-center gap-4">
                 <div className="flex items-center border border-gray-700 rounded-lg">
@@ -216,29 +216,28 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
             </div>
 
             {/* Action Buttons */}
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4">
               <Button
                 onClick={addToCart}
                 size="lg"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-4 text-lg"
-                disabled={!selectedSize || !selectedColor}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 ADICIONAR AO CARRINHO
               </Button>
               <div className="flex gap-4">
                 <Button
-                  onClick={() => toggleFavorite(product)}
+                  onClick={() => isMounted && toggleFavorite(product)}
                   variant="outline"
                   size="lg"
                   className={`flex-1 border-gray-700 hover:bg-gray-800 bg-transparent ${
-                    isFavorite(product.id)
+                    isMounted && isFavorite(product.id)
                       ? "text-orange-500 border-orange-500"
                       : "text-gray-300 hover:border-orange-500 hover:text-orange-500"
                   }`}
                 >
-                  <Heart className={`h-5 w-5 mr-2 ${isFavorite(product.id) ? "fill-current" : ""}`} />
-                  {isFavorite(product.id) ? "FAVORITADO" : "FAVORITAR"}
+                  <Heart className={`h-5 w-5 mr-2 ${isMounted && isFavorite(product.id) ? "fill-current" : ""}`} />
+                  {isMounted && isFavorite(product.id) ? "FAVORITADO" : "FAVORITAR"}
                 </Button>
                 <Button
                   onClick={() => setIsShareModalOpen(true)}
@@ -325,49 +324,6 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
 
             <TabsContent value="reviews" className="mt-6">
               <div className="space-y-6">
-                {/* Reviews Summary */}
-                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold">Avaliações dos Clientes</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-5 w-5 ${
-                              i < Math.floor(product.rating) ? "fill-orange-500 text-orange-500" : "text-gray-600"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-lg font-bold">{product.rating}</span>
-                      <span className="text-gray-400">({reviewsCount} avaliações)</span>
-                    </div>
-                  </div>
-
-                  {/* Rating Distribution */}
-                  <div className="space-y-2">
-                    {[5, 4, 3, 2, 1].map((rating) => {
-                      const count = initialReviews.filter((r) => r.rating === rating).length
-                      const percentage = reviewsCount > 0 ? (count / reviewsCount) * 100 : 0
-
-                      return (
-                        <div key={rating} className="flex items-center gap-3">
-                          <span className="text-sm w-8">{rating}★</span>
-                          <div className="flex-1 bg-gray-800 rounded-full h-2">
-                            <div
-                              className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                          <span className="text-sm text-gray-400 w-8">{count}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Individual Reviews */}
                 <div className="space-y-4">
                   {initialReviews.length === 0 ? (
                     <div className="text-center py-12 bg-gray-900 border border-gray-800 rounded-lg">
@@ -387,11 +343,6 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
                               <div>
                                 <div className="flex items-center gap-2">
                                   <h4 className="font-bold">{review.userName}</h4>
-                                  {review.verified && (
-                                    <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">
-                                      Compra Verificada
-                                    </span>
-                                  )}
                                 </div>
                                 <div className="flex items-center mt-1">
                                   {[...Array(5)].map((_, i) => (
@@ -413,24 +364,11 @@ export default function ProductView({ product, initialReviews }: ProductViewProp
                     ))
                   )}
                 </div>
-
-                {/* Load More Reviews Button */}
-                {initialReviews.length > 5 && (
-                  <div className="text-center">
-                    <Button
-                      variant="outline"
-                      className="border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
-                    >
-                      VER MAIS AVALIAÇÕES
-                    </Button>
-                  </div>
-                )}
               </div>
             </TabsContent>
           </Tabs>
         </div>
       </div>
-      {/* Share Modal */}
       <ShareModal product={product} isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
     </div>
   )
