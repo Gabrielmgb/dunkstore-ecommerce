@@ -1,29 +1,110 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Heart, Grid, List, Share2, ShoppingCart, Trash2 } from "lucide-react"
-import { useFavorites } from "@/lib/favorites-context"
-import { useCart } from "@/lib/cart-context"
 import ProductCard from "@/components/product/product-card"
 import ProductModal from "@/components/product/product-modal"
 import ShareModal from "@/components/share/share-modal"
 import type { Product } from "@/lib/cart-context"
 
+// Static favorites data
+const staticFavorites = [
+  {
+    id: 1,
+    name: "Nike Dunk Low Retro White/Black",
+    price: 899.99,
+    originalPrice: 1199.99,
+    image: "/placeholder.svg?height=300&width=300",
+    badge: "PROMOÇÃO",
+    rating: 4.8,
+    reviews: 127,
+    sizes: ["38", "39", "40", "41", "42", "43"],
+    colors: ["Branco/Preto", "Preto/Branco"],
+    gender: "Unissex",
+    brand: "Nike",
+    category: "Dunk Low",
+    description:
+      "O Nike Dunk Low Retro traz de volta o ícone do basquete dos anos 80 com detalhes premium e conforto moderno.",
+    features: [
+      "Cabedal em couro genuíno premium",
+      "Solado de borracha com tração multidirecional",
+      "Espuma no colarinho para conforto extra",
+      "Design icônico dos anos 80",
+      "Palmilha acolchoada removível",
+    ],
+    stockCount: 15,
+  },
+  {
+    id: 2,
+    name: "Nike Dunk High Vintage Navy",
+    price: 749.99,
+    originalPrice: 999.99,
+    image: "/placeholder.svg?height=300&width=300",
+    badge: "LANÇAMENTO",
+    rating: 4.9,
+    reviews: 89,
+    sizes: ["38", "39", "40", "41", "42"],
+    colors: ["Azul Marinho", "Azul/Branco"],
+    gender: "Masculino",
+    brand: "Nike",
+    category: "Dunk High",
+    description:
+      "Nike Dunk High com design vintage e cores clássicas. Perfeito para quem busca estilo retrô com qualidade moderna.",
+    features: [
+      "Design vintage autêntico",
+      "Cores clássicas atemporais",
+      "Construção durável",
+      "Conforto para uso diário",
+      "Estilo icônico dos anos 80",
+    ],
+    stockCount: 8,
+  },
+  {
+    id: 3,
+    name: "Nike Dunk SB Street Pink",
+    price: 1099.99,
+    image: "/placeholder.svg?height=300&width=300",
+    badge: "EXCLUSIVO",
+    rating: 4.7,
+    reviews: 67,
+    sizes: ["35", "36", "37", "38", "39"],
+    colors: ["Rosa/Branco", "Rosa Claro"],
+    gender: "Feminino",
+    brand: "Nike",
+    category: "Dunk SB",
+    description:
+      "Nike Dunk SB com design exclusivo em rosa. Desenvolvido especialmente para skateboard com tecnologia avançada.",
+    features: [
+      "Tecnologia SB para skateboard",
+      "Design exclusivo feminino",
+      "Cores vibrantes",
+      "Durabilidade superior",
+      "Grip especializado",
+    ],
+    stockCount: 12,
+  },
+]
+
 export default function FavoritesPage() {
-  const { state: favoritesState, dispatch: favoritesDispatch } = useFavorites()
-  const { dispatch: cartDispatch } = useCart()
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState("recent")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [shareProduct, setShareProduct] = useState<Product | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [favorites, setFavorites] = useState(staticFavorites)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Handle hydration
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Sort favorites
-  const sortedFavorites = [...favoritesState.items].sort((a, b) => {
+  const sortedFavorites = [...favorites].sort((a, b) => {
     switch (sortBy) {
       case "price-low":
         return a.price - b.price
@@ -48,31 +129,47 @@ export default function FavoritesPage() {
   }
 
   const handleAddToCart = (product: Product) => {
-    // Add with default size and color - in real app, would open size/color selector
-    cartDispatch({
-      type: "ADD_TO_CART",
-      payload: {
-        product,
-        size: product.sizes[0],
-        color: product.colors[0],
-        quantity: 1,
-      },
-    })
+    console.log("Added to cart:", product.name)
     alert("Produto adicionado ao carrinho!")
   }
 
   const handleRemoveFromFavorites = (productId: number) => {
-    favoritesDispatch({ type: "REMOVE_FROM_FAVORITES", payload: productId })
+    setFavorites(favorites.filter((fav) => fav.id !== productId))
   }
 
   const handleClearAllFavorites = () => {
     if (confirm("Tem certeza que deseja remover todos os produtos dos favoritos?")) {
-      favoritesDispatch({ type: "CLEAR_FAVORITES" })
+      setFavorites([])
     }
   }
 
+  // Prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <div className="h-12 bg-gray-800 rounded w-80 mb-2 animate-pulse"></div>
+              <div className="h-4 bg-gray-800 rounded w-48 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-6 animate-pulse">
+                <div className="h-48 bg-gray-800 rounded mb-4"></div>
+                <div className="h-4 bg-gray-800 rounded w-3/4 mb-2"></div>
+                <div className="h-6 bg-gray-800 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white" suppressHydrationWarning>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -81,10 +178,10 @@ export default function FavoritesPage() {
               MEUS <span className="text-orange-500">FAVORITOS</span>
             </h1>
             <p className="text-gray-400">
-              {favoritesState.count} {favoritesState.count === 1 ? "produto favoritado" : "produtos favoritados"}
+              {favorites.length} {favorites.length === 1 ? "produto favoritado" : "produtos favoritados"}
             </p>
           </div>
-          {favoritesState.count > 0 && (
+          {favorites.length > 0 && (
             <Button
               onClick={handleClearAllFavorites}
               variant="outline"
@@ -96,7 +193,7 @@ export default function FavoritesPage() {
           )}
         </div>
 
-        {favoritesState.count === 0 ? (
+        {favorites.length === 0 ? (
           /* Empty State */
           <Card className="bg-gray-900 border-gray-800">
             <CardContent className="text-center py-16">
@@ -239,23 +336,14 @@ export default function FavoritesPage() {
                   </Button>
                   <Button
                     onClick={() => {
-                      // Add all favorites to cart with default options
                       sortedFavorites.forEach((product) => {
-                        cartDispatch({
-                          type: "ADD_TO_CART",
-                          payload: {
-                            product,
-                            size: product.sizes[0],
-                            color: product.colors[0],
-                            quantity: 1,
-                          },
-                        })
+                        console.log("Added to cart:", product.name)
                       })
                       alert("Todos os favoritos foram adicionados ao carrinho!")
                     }}
                     variant="outline"
                     className="border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
-                    disabled={favoritesState.count === 0}
+                    disabled={favorites.length === 0}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     ADICIONAR TODOS AO CARRINHO

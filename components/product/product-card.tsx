@@ -1,12 +1,12 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { Product } from "@/lib/cart-context"
 import { Star, Eye, Heart } from "lucide-react"
-import { useFavorites } from "@/lib/favorites-context"
 
 interface ProductCardProps {
   product: Product
@@ -14,10 +14,48 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onViewDetails }: ProductCardProps) {
-  const { isFavorite, toggleFavorite } = useFavorites()
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Handle hydration
+  useEffect(() => {
+    setIsMounted(true)
+    // Check if product is in favorites (static check)
+    const staticFavoriteIds = [1, 2, 3] // Static favorite IDs
+    setIsFavorite(staticFavoriteIds.includes(product.id))
+  }, [product.id])
+
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite)
+    console.log(`${isFavorite ? "Removed from" : "Added to"} favorites:`, product.name)
+  }
+
+  // Prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <Card className="bg-gray-900 border-gray-800 overflow-hidden group hover:border-orange-500 transition-all duration-300">
+        <div className="relative">
+          <div className="w-full h-64 bg-gray-800 animate-pulse" />
+          {product.badge && (
+            <Badge className="absolute top-4 left-4 bg-orange-500 text-black font-bold">{product.badge}</Badge>
+          )}
+        </div>
+        <CardContent className="p-6">
+          <div className="h-4 bg-gray-800 rounded w-16 mb-2 animate-pulse"></div>
+          <div className="h-6 bg-gray-800 rounded w-full mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-800 rounded w-32 mb-3 animate-pulse"></div>
+          <div className="h-8 bg-gray-800 rounded w-24 mb-4 animate-pulse"></div>
+          <div className="h-10 bg-gray-800 rounded w-full animate-pulse"></div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <Card className="bg-gray-900 border-gray-800 overflow-hidden group hover:border-orange-500 transition-all duration-300">
+    <Card
+      className="bg-gray-900 border-gray-800 overflow-hidden group hover:border-orange-500 transition-all duration-300"
+      suppressHydrationWarning
+    >
       <div className="relative">
         <Image
           src={product.image || "/placeholder.svg"}
@@ -45,17 +83,15 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
         <Button
           onClick={(e) => {
             e.stopPropagation()
-            toggleFavorite(product)
+            toggleFavorite()
           }}
           variant="ghost"
           size="sm"
           className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
-            isFavorite(product.id)
-              ? "bg-orange-500 text-black hover:bg-orange-600"
-              : "bg-black/60 text-white hover:bg-black/80"
+            isFavorite ? "bg-orange-500 text-black hover:bg-orange-600" : "bg-black/60 text-white hover:bg-black/80"
           }`}
         >
-          <Heart className={`h-4 w-4 ${isFavorite(product.id) ? "fill-current" : ""}`} />
+          <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
         </Button>
       </div>
 

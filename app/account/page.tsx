@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,9 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/lib/auth-context"
-import { useCart } from "@/lib/cart-context"
-import { useFavorites } from "@/lib/favorites-context"
 import {
   User,
   MapPin,
@@ -33,11 +30,29 @@ import {
 } from "lucide-react"
 import ProductCard from "@/components/product/product-card"
 import ProductModal from "@/components/product/product-modal"
-import LoginModal from "@/components/auth/login-modal"
 import type { Product } from "@/lib/cart-context"
 
-// Mock orders data
-const mockOrders = [
+// Static user data
+const staticUser = {
+  id: "user-001",
+  name: "Gabriel Silva",
+  email: "gabrielmgb.nd@gmail.com",
+  phone: "(11) 99999-9999",
+  birthDate: "1990-05-15",
+  gender: "Masculino",
+  address: {
+    street: "Rua das Flores",
+    number: "123",
+    complement: "Apto 45",
+    neighborhood: "Vila Madalena",
+    city: "São Paulo",
+    state: "SP",
+    zipCode: "05435-000",
+  },
+}
+
+// Static orders data
+const staticOrders = [
   {
     id: "ORD-001",
     date: "15/12/2024",
@@ -45,10 +60,10 @@ const mockOrders = [
     total: 899.99,
     items: [
       {
-        productName: "Nike Dunk Low Panda",
+        productName: "Nike Dunk Low Retro White/Black",
         productImage: "/placeholder.svg?height=400&width=400",
         size: "42",
-        color: "Preto/Branco",
+        color: "Branco/Preto",
         quantity: 1,
         price: 899.99,
       },
@@ -63,10 +78,10 @@ const mockOrders = [
     total: 1299.99,
     items: [
       {
-        productName: "Nike Dunk High Chicago",
+        productName: "Nike Dunk High Vintage Navy",
         productImage: "/placeholder.svg?height=400&width=400",
         size: "41",
-        color: "Vermelho/Branco",
+        color: "Azul Marinho",
         quantity: 1,
         price: 1299.99,
       },
@@ -81,10 +96,10 @@ const mockOrders = [
     total: 599.99,
     items: [
       {
-        productName: "Nike Dunk Low White",
+        productName: "Nike Dunk SB Street Pink",
         productImage: "/placeholder.svg?height=400&width=400",
-        size: "40",
-        color: "Branco",
+        size: "38",
+        color: "Rosa/Branco",
         quantity: 1,
         price: 599.99,
       },
@@ -93,6 +108,106 @@ const mockOrders = [
     estimatedDelivery: null,
   },
 ]
+
+// Static favorites data
+const staticFavorites = [
+  {
+    id: 1,
+    name: "Nike Dunk Low Retro White/Black",
+    price: 899.99,
+    originalPrice: 1199.99,
+    image: "/placeholder.svg?height=300&width=300",
+    badge: "PROMOÇÃO",
+    rating: 4.8,
+    reviews: 127,
+    sizes: ["38", "39", "40", "41", "42", "43"],
+    colors: ["Branco/Preto", "Preto/Branco"],
+    gender: "Unissex",
+    brand: "Nike",
+    category: "Dunk Low",
+    description:
+      "O Nike Dunk Low Retro traz de volta o ícone do basquete dos anos 80 com detalhes premium e conforto moderno.",
+    features: [
+      "Cabedal em couro genuíno premium",
+      "Solado de borracha com tração multidirecional",
+      "Espuma no colarinho para conforto extra",
+      "Design icônico dos anos 80",
+      "Palmilha acolchoada removível",
+    ],
+    stockCount: 15,
+  },
+  {
+    id: 2,
+    name: "Nike Dunk High Vintage Navy",
+    price: 749.99,
+    originalPrice: 999.99,
+    image: "/placeholder.svg?height=300&width=300",
+    badge: "LANÇAMENTO",
+    rating: 4.9,
+    reviews: 89,
+    sizes: ["38", "39", "40", "41", "42"],
+    colors: ["Azul Marinho", "Azul/Branco"],
+    gender: "Masculino",
+    brand: "Nike",
+    category: "Dunk High",
+    description:
+      "Nike Dunk High com design vintage e cores clássicas. Perfeito para quem busca estilo retrô com qualidade moderna.",
+    features: [
+      "Design vintage autêntico",
+      "Cores clássicas atemporais",
+      "Construção durável",
+      "Conforto para uso diário",
+      "Estilo icônico dos anos 80",
+    ],
+    stockCount: 8,
+  },
+  {
+    id: 3,
+    name: "Nike Dunk SB Street Pink",
+    price: 1099.99,
+    image: "/placeholder.svg?height=300&width=300",
+    badge: "EXCLUSIVO",
+    rating: 4.7,
+    reviews: 67,
+    sizes: ["35", "36", "37", "38", "39"],
+    colors: ["Rosa/Branco", "Rosa Claro"],
+    gender: "Feminino",
+    brand: "Nike",
+    category: "Dunk SB",
+    description:
+      "Nike Dunk SB com design exclusivo em rosa. Desenvolvido especialmente para skateboard com tecnologia avançada.",
+    features: [
+      "Tecnologia SB para skateboard",
+      "Design exclusivo feminino",
+      "Cores vibrantes",
+      "Durabilidade superior",
+      "Grip especializado",
+    ],
+    stockCount: 12,
+  },
+]
+
+// Static cart data
+const staticCart = {
+  items: [
+    {
+      id: 1,
+      product: staticFavorites[0],
+      size: "42",
+      color: "Branco/Preto",
+      quantity: 1,
+    },
+    {
+      id: 2,
+      product: staticFavorites[1],
+      size: "41",
+      color: "Azul Marinho",
+      quantity: 2,
+    },
+  ],
+  itemCount: 3,
+  total: 2399.97,
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -125,110 +240,75 @@ const getStatusText = (status: string) => {
 }
 
 export default function AccountPage() {
-  const { user, isAuthenticated, logout, updateProfile } = useAuth()
-  const { state: cartState } = useCart()
-  const { state: favoritesState } = useFavorites()
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   // State management
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isAuthenticated] = useState(true) // Static authenticated state
+  const [user] = useState(staticUser) // Static user data
   const [isEditing, setIsEditing] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("profile")
   const [isLoading, setIsLoading] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Form data
   const [profileData, setProfileData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    birthDate: "",
-    gender: "",
-    address: {
-      street: "",
-      number: "",
-      complement: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-      zipCode: "",
-    },
+    name: staticUser.name,
+    email: staticUser.email,
+    phone: staticUser.phone,
+    birthDate: staticUser.birthDate,
+    gender: staticUser.gender,
+    address: staticUser.address,
   })
 
-  // Initialize profile data from user - only run once when user changes
+  // Handle hydration
   useEffect(() => {
-    if (user && !isInitialized) {
-      setProfileData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        birthDate: user.birthDate || "",
-        gender: user.gender || "",
-        address: user.address || {
-          street: "",
-          number: "",
-          complement: "",
-          neighborhood: "",
-          city: "",
-          state: "",
-          zipCode: "",
-        },
-      })
-      setIsInitialized(true)
-    }
-  }, [user, isInitialized])
+    setIsMounted(true)
 
-  // Handle URL tab parameter - only run once on mount
-  useEffect(() => {
-    const tab = searchParams.get("tab")
-    if (tab && ["profile", "orders", "favorites", "address", "settings"].includes(tab)) {
-      setActiveTab(tab)
+    // Handle URL tab parameter only after mount
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search)
+      const tab = urlParams.get("tab")
+      if (tab && ["profile", "orders", "favorites", "address", "settings"].includes(tab)) {
+        setActiveTab(tab)
+      }
     }
-  }, [searchParams])
+  }, [])
 
   // Event handlers
   const handleSaveProfile = useCallback(async () => {
     setIsLoading(true)
     try {
-      await updateProfile(profileData)
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      console.log("Profile updated:", profileData)
       setIsEditing(false)
+      alert("Perfil atualizado com sucesso!")
     } catch (error) {
       console.error("Error updating profile:", error)
       alert("Erro ao salvar perfil. Tente novamente.")
     } finally {
       setIsLoading(false)
     }
-  }, [profileData, updateProfile])
+  }, [profileData])
 
   const handleCancelEdit = useCallback(() => {
-    if (user) {
-      setProfileData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        birthDate: user.birthDate || "",
-        gender: user.gender || "",
-        address: user.address || {
-          street: "",
-          number: "",
-          complement: "",
-          neighborhood: "",
-          city: "",
-          state: "",
-          zipCode: "",
-        },
-      })
-    }
+    setProfileData({
+      name: staticUser.name,
+      email: staticUser.email,
+      phone: staticUser.phone,
+      birthDate: staticUser.birthDate,
+      gender: staticUser.gender,
+      address: staticUser.address,
+    })
     setIsEditing(false)
-  }, [user])
+  }, [])
 
   const handleLogout = useCallback(() => {
-    logout()
+    console.log("User logged out")
     router.push("/")
-  }, [logout, router])
+  }, [router])
 
   const handleViewProduct = useCallback((product: Product) => {
     setSelectedProduct(product)
@@ -240,7 +320,23 @@ export default function AccountPage() {
     setSelectedProduct(null)
   }, [])
 
-  // Show login modal if not authenticated
+  // Show loading until mounted to prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-black text-white pt-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <p className="text-gray-400">Carregando conta...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login modal if not authenticated (this won't happen with static data)
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -249,33 +345,15 @@ export default function AccountPage() {
             <User className="h-16 w-16 text-gray-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-4">ACESSE SUA CONTA</h2>
             <p className="text-gray-400 mb-6">Faça login para ver seus pedidos, favoritos e informações pessoais.</p>
-            <Button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold"
-            >
-              FAZER LOGIN
-            </Button>
+            <Button className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold">FAZER LOGIN</Button>
           </CardContent>
         </Card>
-        <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
-      </div>
-    )
-  }
-
-  // Show loading if user data is not available
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Carregando dados da conta...</p>
-        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white pt-20">
+    <div className="min-h-screen bg-black text-white pt-20" suppressHydrationWarning>
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -301,21 +379,21 @@ export default function AccountPage() {
           <Card className="bg-gray-900 border-gray-800">
             <CardContent className="p-6 text-center">
               <ShoppingBag className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{mockOrders.length}</div>
+              <div className="text-2xl font-bold">{staticOrders.length}</div>
               <div className="text-sm text-gray-400">Pedidos</div>
             </CardContent>
           </Card>
           <Card className="bg-gray-900 border-gray-800">
             <CardContent className="p-6 text-center">
               <Heart className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{favoritesState.count}</div>
+              <div className="text-2xl font-bold">{staticFavorites.length}</div>
               <div className="text-sm text-gray-400">Favoritos</div>
             </CardContent>
           </Card>
           <Card className="bg-gray-900 border-gray-800">
             <CardContent className="p-6 text-center">
               <Package className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{cartState.itemCount}</div>
+              <div className="text-2xl font-bold">{staticCart.itemCount}</div>
               <div className="text-sm text-gray-400">No Carrinho</div>
             </CardContent>
           </Card>
@@ -506,111 +584,97 @@ export default function AccountPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShoppingBag className="h-5 w-5 text-orange-500" />
-                  MEUS PEDIDOS ({mockOrders.length})
+                  MEUS PEDIDOS ({staticOrders.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {mockOrders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <ShoppingBag className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 mb-2">Você ainda não fez nenhum pedido</p>
-                    <p className="text-sm text-gray-500 mb-6">Explore nossa coleção e faça seu primeiro pedido!</p>
-                    <Button
-                      onClick={() => router.push("/shop")}
-                      className="bg-orange-500 hover:bg-orange-600 text-black font-bold"
-                    >
-                      EXPLORAR PRODUTOS
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {mockOrders.map((order) => (
-                      <Card key={order.id} className="bg-gray-800 border-gray-700">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h3 className="font-bold text-lg">Pedido #{order.id}</h3>
-                              <p className="text-gray-400 text-sm">{order.date}</p>
-                            </div>
-                            <div className="text-right">
-                              <Badge className={`${getStatusColor(order.status)} text-white mb-2`}>
-                                {getStatusText(order.status)}
-                              </Badge>
-                              <p className="text-lg font-bold text-orange-500">
-                                R$ {order.total.toFixed(2).replace(".", ",")}
-                              </p>
-                            </div>
+                <div className="space-y-4">
+                  {staticOrders.map((order) => (
+                    <Card key={order.id} className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg">Pedido #{order.id}</h3>
+                            <p className="text-gray-400 text-sm">{order.date}</p>
                           </div>
+                          <div className="text-right">
+                            <Badge className={`${getStatusColor(order.status)} text-white mb-2`}>
+                              {getStatusText(order.status)}
+                            </Badge>
+                            <p className="text-lg font-bold text-orange-500">
+                              R$ {order.total.toFixed(2).replace(".", ",")}
+                            </p>
+                          </div>
+                        </div>
 
-                          <div className="space-y-3">
-                            {order.items.map((item, index) => (
-                              <div key={index} className="flex items-center gap-4 p-3 bg-gray-900 rounded-lg">
-                                <img
-                                  src={item.productImage || "/placeholder.svg"}
-                                  alt={item.productName}
-                                  className="w-16 h-16 object-cover rounded-lg bg-gray-700"
-                                />
-                                <div className="flex-1">
-                                  <h4 className="font-semibold">{item.productName}</h4>
-                                  <p className="text-sm text-gray-400">
-                                    Tamanho: {item.size} | Cor: {item.color} | Qtd: {item.quantity}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-bold">R$ {item.price.toFixed(2).replace(".", ",")}</p>
-                                </div>
+                        <div className="space-y-3">
+                          {order.items.map((item, index) => (
+                            <div key={index} className="flex items-center gap-4 p-3 bg-gray-900 rounded-lg">
+                              <img
+                                src={item.productImage || "/placeholder.svg"}
+                                alt={item.productName}
+                                className="w-16 h-16 object-cover rounded-lg bg-gray-700"
+                              />
+                              <div className="flex-1">
+                                <h4 className="font-semibold">{item.productName}</h4>
+                                <p className="text-sm text-gray-400">
+                                  Tamanho: {item.size} | Cor: {item.color} | Qtd: {item.quantity}
+                                </p>
                               </div>
-                            ))}
-                          </div>
+                              <div className="text-right">
+                                <p className="font-bold">R$ {item.price.toFixed(2).replace(".", ",")}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
 
+                        {order.trackingCode && (
+                          <div className="mt-4 p-3 bg-gray-900 rounded-lg">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Truck className="h-4 w-4 text-orange-500" />
+                              <span className="text-sm font-semibold">Código de Rastreamento:</span>
+                              <span className="text-sm text-orange-500 font-mono">{order.trackingCode}</span>
+                            </div>
+                            {order.estimatedDelivery && (
+                              <p className="text-xs text-gray-400">Previsão de entrega: {order.estimatedDelivery}</p>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            VER DETALHES
+                          </Button>
                           {order.trackingCode && (
-                            <div className="mt-4 p-3 bg-gray-900 rounded-lg">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Truck className="h-4 w-4 text-orange-500" />
-                                <span className="text-sm font-semibold">Código de Rastreamento:</span>
-                                <span className="text-sm text-orange-500 font-mono">{order.trackingCode}</span>
-                              </div>
-                              {order.estimatedDelivery && (
-                                <p className="text-xs text-gray-400">Previsão de entrega: {order.estimatedDelivery}</p>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-2 mt-4">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
+                              className="border-gray-700 text-gray-300 hover:border-blue-500 hover:text-blue-500 bg-transparent"
                             >
-                              <Eye className="h-4 w-4 mr-2" />
-                              VER DETALHES
+                              <Truck className="h-4 w-4 mr-2" />
+                              RASTREAR
                             </Button>
-                            {order.trackingCode && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-gray-700 text-gray-300 hover:border-blue-500 hover:text-blue-500 bg-transparent"
-                              >
-                                <Truck className="h-4 w-4 mr-2" />
-                                RASTREAR
-                              </Button>
-                            )}
-                            {order.status === "delivered" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-gray-700 text-gray-300 hover:border-yellow-500 hover:text-yellow-500 bg-transparent"
-                              >
-                                <Star className="h-4 w-4 mr-2" />
-                                AVALIAR
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                          )}
+                          {order.status === "delivered" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-700 text-gray-300 hover:border-yellow-500 hover:text-yellow-500 bg-transparent"
+                            >
+                              <Star className="h-4 w-4 mr-2" />
+                              AVALIAR
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -622,38 +686,22 @@ export default function AccountPage() {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Heart className="h-5 w-5 text-orange-500" />
-                    MEUS FAVORITOS ({favoritesState.count})
+                    MEUS FAVORITOS ({staticFavorites.length})
                   </span>
-                  {favoritesState.count > 0 && (
-                    <Button
-                      onClick={() => router.push("/favorites")}
-                      className="bg-orange-500 hover:bg-orange-600 text-black font-bold"
-                    >
-                      VER TODOS
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => router.push("/favorites")}
+                    className="bg-orange-500 hover:bg-orange-600 text-black font-bold"
+                  >
+                    VER TODOS
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {favoritesState.items.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Heart className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 mb-2">Você ainda não tem produtos favoritos</p>
-                    <p className="text-sm text-gray-500 mb-6">Adicione produtos aos favoritos para vê-los aqui!</p>
-                    <Button
-                      onClick={() => router.push("/shop")}
-                      className="bg-orange-500 hover:bg-orange-600 text-black font-bold"
-                    >
-                      EXPLORAR PRODUTOS
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {favoritesState.items.slice(0, 6).map((product) => (
-                      <ProductCard key={product.id} product={product} onViewDetails={handleViewProduct} />
-                    ))}
-                  </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {staticFavorites.slice(0, 6).map((product) => (
+                    <ProductCard key={product.id} product={product} onViewDetails={handleViewProduct} />
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -965,7 +1013,11 @@ export default function AccountPage() {
                     <Button
                       variant="outline"
                       className="border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-500 bg-transparent"
-                      onClick={() => window.open("mailto:gabrielmgb.nd@gmail.com", "_blank")}
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          window.open("mailto:gabrielmgb.nd@gmail.com", "_blank")
+                        }
+                      }}
                     >
                       ENVIAR EMAIL
                     </Button>

@@ -5,11 +5,11 @@ export default function AccountLoading() {
         {/* Header Skeleton */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <div className="h-12 bg-gray-800 rounded-lg w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-800 rounded w-48 mb-1 animate-pulse"></div>
-            <div className="h-3 bg-gray-800 rounded w-40 animate-pulse"></div>
+            <div className="h-12 bg-gray-800 rounded-lg w-80 mb-2 animate-pulse"></div>
+            <div className="h-6 bg-gray-800 rounded-lg w-60 mb-1 animate-pulse"></div>
+            <div className="h-4 bg-gray-800 rounded-lg w-48 animate-pulse"></div>
           </div>
-          <div className="h-10 bg-gray-800 rounded w-24 animate-pulse"></div>
+          <div className="h-10 bg-gray-800 rounded-lg w-24 animate-pulse"></div>
         </div>
 
         {/* Stats Cards Skeleton */}
@@ -29,7 +29,7 @@ export default function AccountLoading() {
         <div className="w-full">
           <div className="grid grid-cols-5 bg-gray-900 rounded-lg mb-8 p-1">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-800 rounded animate-pulse"></div>
+              <div key={i} className="h-12 bg-gray-800 rounded animate-pulse"></div>
             ))}
           </div>
 
