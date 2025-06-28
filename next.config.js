@@ -4,8 +4,8 @@ const isProd = process.env.NODE_ENV === "production"
 
 const nextConfig = {
   output: "export",
-  basePath: isProd ? "/new-dunkstore" : "",
-  assetPrefix: isProd ? '/new-dunkstore/' : '',
+  basePath: isProd ? "/dunkstore-ecommerce" : "",
+  assetPrefix: isProd ? '/dunkstore-ecommerce/' : '',
 
   eslint: {
     ignoreDuringBuilds: true,
